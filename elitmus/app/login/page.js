@@ -25,9 +25,9 @@ export default function LoginPage() {
         <input
           name="password"
           type="password"
-          placeholder="Password (min 6 characters)"
+          placeholder="Password (min 8 characters)"
           required
-          minLength={6}
+          minLength={8}
           className="rounded border p-2"
         />
 
