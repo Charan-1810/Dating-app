@@ -28,5 +28,5 @@ export async function createProfile(prevState, formData) {
   const { error } = await supabase.from("profiles").insert(profile);
   if (error) return { error: error.message };
 
-  redirect("/");
+  redirect("/photos");
 }

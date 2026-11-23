@@ -28,23 +28,37 @@ async function ProfileCard() {
   } = await supabase.auth.getUser();
 
   const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .maybeSingle();
+  .from("profiles")
+  .select("*, photos(path, position)")
+  .eq("id", user.id)
+  .order("position", { referencedTable: "photos" })
+  .maybeSingle();
 
   if (!profile) redirect("/onboarding");
 
   const intent = INTENTS.find((i) => i.value === profile.intent)?.label;
 
-  return (
+    return (
     <>
+      <div className="grid w-full max-w-md grid-cols-3 gap-2">
+        {profile.photos.map((p) => (
+          <img
+            key={p.position}
+            src={supabase.storage.from("photos").getPublicUrl(p.path).data.publicUrl}
+            alt=""
+            className="aspect-[3/4] w-full rounded-lg object-cover"
+          />
+        ))}
+      </div>
       <h1 className="text-2xl font-semibold">
         {profile.name}, {getAge(profile.birthdate)}
       </h1>
       <p>
         {profile.city} · {intent}
       </p>
+      <a href="/photos" className="text-sm underline">
+        Edit photos
+      </a>
     </>
   );
 }
