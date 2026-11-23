@@ -1,15 +1,20 @@
-export default async function TestPage() {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/health`,
-    { headers: { apikey: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY } }
-  );
-  const data = await res.json();
+import { createClient } from "@/lib/supabase/server";
+import { logout } from "./login/actions";
+
+export default async function Home() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   return (
-    <pre className="p-8">
-      Status: {res.status}
-      {"\n"}
-      {JSON.stringify(data, null, 2)}
-    </pre>
+    <main className="flex min-h-screen flex-col items-center justify-center gap-4 p-4">
+      <p>
+        Logged in as <strong>{user?.email}</strong>
+      </p>
+      <form action={logout}>
+        <button className="rounded border px-4 py-2">Log out</button>
+      </form>
+    </main>
   );
 }
