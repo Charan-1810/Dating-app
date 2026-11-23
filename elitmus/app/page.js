@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { logout } from "./login/actions";
 import { getAge, INTENTS } from "@/lib/options";
 import { connection } from "next/server";
+import { getTraits } from "@/lib/questions";
 
 // Static shell: the same for everyone, shown instantly
 export default function Home() {
@@ -35,6 +36,9 @@ async function ProfileCard() {
   .maybeSingle();
 
   if (!profile) redirect("/onboarding");
+  if (!profile.personality) redirect("/personality");
+
+  const traits = getTraits(profile.personality);
 
   const intent = INTENTS.find((i) => i.value === profile.intent)?.label;
 
@@ -50,12 +54,22 @@ async function ProfileCard() {
           />
         ))}
       </div>
-      <h1 className="text-2xl font-semibold">
+           <h1 className="text-2xl font-semibold">
         {profile.name}, {getAge(profile.birthdate)}
       </h1>
       <p>
         {profile.city} · {intent}
       </p>
+      <div className="flex flex-wrap justify-center gap-2">
+        {traits.map((t) => (
+          <span key={t} className="rounded-full bg-gray-100 px-3 py-1 text-sm">
+            {t}
+          </span>
+        ))}
+      </div>
+      <a href="/personality" className="text-sm underline">
+        Retake questions
+      </a>
       <a href="/photos" className="text-sm underline">
         Edit photos
       </a>

@@ -19,6 +19,9 @@ export default function PhotosPage() {
       <Link href="/" className="rounded bg-black p-2 text-center text-white">
         Done
       </Link>
+      <Link href="/personality" className="rounded bg-black p-2 text-center text-white">
+         Next
+      </Link>
     </main>
   );
 }
