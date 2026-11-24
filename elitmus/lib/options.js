@@ -31,3 +31,9 @@ export function getAge(birthdate) {
     (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
   return hadBirthday ? age : age - 1;
 }
+// The date exactly `years` ago today, as "YYYY-MM-DD"
+export function dateYearsAgo(years) {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - years);
+  return d.toISOString().slice(0, 10);
+}
