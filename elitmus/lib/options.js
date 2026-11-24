@@ -37,3 +37,11 @@ export function dateYearsAgo(years) {
   d.setFullYear(d.getFullYear() - years);
   return d.toISOString().slice(0, 10);
 }
+export const REPORT_REASONS = [
+  { value: "fake", label: "Fake profile or catfish" },
+  { value: "photos", label: "Inappropriate photos" },
+  { value: "harassment", label: "Harassment or offensive messages" },
+  { value: "scam", label: "Scam, spam or asking for money" },
+  { value: "underage", label: "Appears to be under 18" },
+  { value: "other", label: "Something else" },
+];

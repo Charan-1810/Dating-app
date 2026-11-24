@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -11,6 +11,12 @@ export default function LikeNotifications() {
   const [userId, setUserId] = useState(null);
   const [unseen, setUnseen] = useState(0);
   const [toast, setToast] = useState(null);
+
+  // Always holds the CURRENT page, so the live listener (created once) can read it
+  const pathnameRef = useRef(pathname);
+  useEffect(() => {
+    pathnameRef.current = pathname;
+  }, [pathname]);
 
   // 1. Who's logged in? Re-checked on every page change (handles login/logout)
   useEffect(() => {
@@ -37,11 +43,11 @@ export default function LikeNotifications() {
     loadCount();
   }, [supabase, userId, pathname]);
 
-  // 3. Live: listen for new likes sent to me
+  // 3. Live: listen for new likes sent to me, and new messages in my chats
   useEffect(() => {
     if (!userId) return;
     const channel = supabase
-      .channel(`likes:${userId}`)
+      .channel(`notify:${userId}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "likes", filter: `to_user=eq.${userId}` },
@@ -58,6 +64,28 @@ export default function LikeNotifications() {
             href: `/profile/${fromId}`,
           });
           if (!myLike) setUnseen((n) => n + 1);
+        }
+      )
+      .on(
+        "postgres_changes",
+        // No filter needed: RLS only delivers messages from chats I'm part of
+        { event: "INSERT", schema: "public", table: "messages" },
+        async (payload) => {
+          const msg = payload.new;
+          if (msg.sender_id === userId) return; // my own message
+          if (pathnameRef.current === `/chat/${msg.match_id}`) return; // already looking at this chat
+
+          const { data: sender } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", msg.sender_id)
+            .single();
+          const preview = msg.body.length > 60 ? `${msg.body.slice(0, 60)}…` : msg.body;
+
+          setToast({
+            text: `💬 ${sender?.name}: ${preview}`,
+            href: `/chat/${msg.match_id}`,
+          });
         }
       )
       .subscribe();

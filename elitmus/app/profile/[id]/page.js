@@ -5,6 +5,7 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import ProfileView from "@/components/profile-view";
 import { LikeBackButton } from "@/components/like-button";
+import SafetyMenu from "@/components/safety-menu";
 
 export default function ProfilePage({ params }) {
   return (
@@ -32,6 +33,7 @@ async function OtherProfile({ params }) {
     { data: myLike },
     { data: theirLike },
     { data: sentToday },
+    { data: match },  
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -43,6 +45,11 @@ async function OtherProfile({ params }) {
     supabase.from("likes").select("id").eq("from_user", user.id).eq("to_user", id).maybeSingle(),
     supabase.from("likes").select("target, comment").eq("from_user", id).eq("to_user", user.id).maybeSingle(),
     supabase.rpc("likes_sent_today"),
+    supabase                  // NEW
+      .from("matches")
+      .select("id")
+      .or(`user_a.eq.${id},user_b.eq.${id}`)
+      .maybeSingle(),
   ]);
 
   if (error) throw new Error(error.message);
@@ -54,8 +61,13 @@ async function OtherProfile({ params }) {
 
   return (
     <>
-      {myLike && theirLike && (
-        <Banner>🎉 You and {profile.name} matched! Chat is coming soon.</Banner>
+      {match && (
+        <Banner>
+          🎉 You and {profile.name} matched!{" "}
+          <Link href={`/chat/${match.id}`} className="font-medium underline">
+            Send a message →
+          </Link>
+        </Banner>
       )}
       {myLike && !theirLike && (
         <Banner>You liked {profile.name}. If they like you back, it&apos;s a match.</Banner>
@@ -77,6 +89,7 @@ async function OtherProfile({ params }) {
         </p>
       )}
       <ProfileView profile={profile} likeTo={canLike ? id : null} />
+      {!isMe && <SafetyMenu userId={id} name={profile.name} />}
     </>
   );
 }

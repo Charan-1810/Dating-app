@@ -33,16 +33,20 @@ async function LikesContent() {
       .select(`target, comment, created_at, sender:profiles!likes_from_user_fkey(${CARD_FIELDS})`)
       .eq("to_user", user.id)
       .order("created_at", { ascending: false }),
-    supabase.from("matches").select("user_a, user_b").order("created_at", { ascending: false }),
+    supabase.from("matches").select("id, user_a, user_b").order("created_at", { ascending: false }),
   ]);
 
   const matchedIds = matches.map((m) => (m.user_a === user.id ? m.user_b : m.user_a));
+  const matchIdFor = Object.fromEntries(
+    matches.map((m) => [m.user_a === user.id ? m.user_b : m.user_a, m.id])
+  );
   const waiting = received.filter((like) => !matchedIds.includes(like.sender.id));
 
   const { data: matchedProfiles } = await supabase
     .from("profiles")
     .select(CARD_FIELDS)
     .in("id", matchedIds);
+
   // Opening this page counts as "seen": reset the unread badge
   await supabase
     .from("profiles")
@@ -51,14 +55,23 @@ async function LikesContent() {
 
   return (
     <>
-      
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-medium">Matches ({matchedProfiles.length})</h2>
         {matchedProfiles.length === 0 ? (
           <p className="text-sm text-gray-500">No matches yet.</p>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {matchedProfiles.map((p) => <ProfileCard key={p.id} profile={p} />)}
+            {matchedProfiles.map((p) => (
+              <div key={p.id} className="flex flex-col gap-2">
+                <ProfileCard profile={p} />
+                <Link
+                  href={`/chat/${matchIdFor[p.id]}`}
+                  className="rounded bg-black p-2 text-center text-sm text-white"
+                >
+                  Message
+                </Link>
+              </div>
+            ))}
           </div>
         )}
       </section>
