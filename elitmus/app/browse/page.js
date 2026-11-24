@@ -1,8 +1,7 @@
 import { Suspense } from "react";
-import Link from "next/link";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { CITIES, INTENTS, dateYearsAgo } from "@/lib/options";
+import { CITIES, INTENTS, PAUSE_AFTER_DAYS, dateYearsAgo, daysAgo } from "@/lib/options";
 import ProfileCard from "@/components/profile-card";
 
 const GENDER_FOR = { women: "woman", men: "man" };
@@ -11,13 +10,7 @@ const GROUP_FOR = { woman: "women", man: "men" };
 export default function BrowsePage({ searchParams }) {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Browse</h1>
-        <div className="flex gap-4">
-          <Link href="/likes" className="text-sm underline">Likes</Link>
-          <Link href="/" className="text-sm underline">My profile</Link>
-        </div>
-      </header>
+      <h1 className="text-2xl font-semibold">Browse</h1>
       <Suspense fallback={<p className="text-gray-500">Loading profiles...</p>}>
         <BrowseResults searchParams={searchParams} />
       </Suspense>
@@ -50,9 +43,10 @@ async function BrowseResults({ searchParams }) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, name, birthdate, city, is_verified, personality, photos(path, position), prompt_answers!inner(answer)"
+      "id, name, birthdate, city, is_verified, personality, last_active_at, photos(path, position), prompt_answers!inner(answer)"
     )
     .neq("id", user.id)
+    .gte("last_active_at", daysAgo(PAUSE_AFTER_DAYS)) // auto-pause: hide inactive profiles
     .order("last_active_at", { ascending: false })
     .order("position", { referencedTable: "photos" })
     .limit(50);
@@ -103,7 +97,8 @@ async function BrowseResults({ searchParams }) {
       </form>
 
       <p className="text-sm text-gray-500">
-        {profiles.length} {profiles.length === 1 ? "person" : "people"}
+        {profiles.length} {profiles.length === 1 ? "person" : "people"} · profiles inactive for{" "}
+        {PAUSE_AFTER_DAYS}+ days are paused, so everyone here is real and around
       </p>
 
       {profiles.length === 0 ? (

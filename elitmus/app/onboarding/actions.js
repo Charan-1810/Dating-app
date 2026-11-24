@@ -19,6 +19,8 @@ export async function createProfile(prevState, formData) {
     interested_in: formData.get("interested_in"),
     city: formData.get("city"),
     intent: formData.get("intent"),
+    // An unticked checkbox isn't sent at all; a ticked one sends "on"
+    elitmus_consent: formData.get("elitmus_consent") === "on",
   };
 
   if (!profile.birthdate || getAge(profile.birthdate) < 18) {

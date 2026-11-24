@@ -30,8 +30,12 @@ export async function proxy(request) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Not logged in, and not already on /login → send them to /login
-  if (!user && !request.nextUrl.pathname.startsWith("/login")) {
+  // Pages anyone can see without logging in
+  const PUBLIC_PATHS = ["/login", "/legal"];
+  const isPublic = PUBLIC_PATHS.some((p) => request.nextUrl.pathname.startsWith(p));
+
+  // Not logged in, and not on a public page → send them to /login
+  if (!user && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);

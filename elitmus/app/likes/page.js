@@ -4,15 +4,13 @@ import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import ProfileCard from "@/components/profile-card";
 
-const CARD_FIELDS = "id, name, birthdate, city, is_verified, personality, photos(path, position)";
+const CARD_FIELDS =
+  "id, name, birthdate, city, is_verified, personality, last_active_at, photos(path, position)";
 
 export default function LikesPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 p-4">
-      <header className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Likes</h1>
-        <Link href="/browse" className="text-sm underline">Browse</Link>
-      </header>
+      <h1 className="text-2xl font-semibold">Likes</h1>
       <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
         <LikesContent />
       </Suspense>

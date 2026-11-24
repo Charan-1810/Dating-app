@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAge } from "@/lib/options";
+import { getAge, isActiveThisWeek } from "@/lib/options";
 import { getTraits } from "@/lib/questions";
 import { photoUrl } from "@/lib/photos";
 
@@ -23,6 +23,9 @@ export default function ProfileCard({ profile }) {
           {profile.is_verified && <span className="ml-1 text-blue-600">✓</span>}
         </p>
         <p className="text-sm text-gray-500">{profile.city}</p>
+        {isActiveThisWeek(profile.last_active_at) && (
+          <p className="text-xs text-green-700">● Active this week</p>
+        )}
         <p className="text-xs text-gray-600">{traits.join(" · ")}</p>
       </div>
     </Link>

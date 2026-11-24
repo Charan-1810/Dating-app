@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { logout } from "./login/actions";
 import ProfileView from "@/components/profile-view";
 
 export default function Home() {
@@ -12,9 +11,6 @@ export default function Home() {
       <Suspense fallback={<p className="text-gray-500">Loading your profile...</p>}>
         <MyProfile />
       </Suspense>
-      <form action={logout}>
-        <button className="rounded border px-4 py-2">Log out</button>
-      </form>
     </main>
   );
 }
@@ -26,7 +22,7 @@ async function MyProfile() {
     data: { user },
   } = await supabase.auth.getUser();
 
-    const { data: profile, error } = await supabase
+  const { data: profile, error } = await supabase
     .from("profiles")
     .select("*, photos(path, position), prompt_answers(position, prompt_id, answer)")
     .eq("id", user.id)
@@ -36,13 +32,14 @@ async function MyProfile() {
 
   if (error) throw new Error(error.message);
   if (!profile) redirect("/onboarding");
+  // Send unfinished accounts to the step they skipped (browse only shows complete profiles)
+  if (!profile.personality) redirect("/personality");
+  if (profile.prompt_answers.length === 0) redirect("/prompts");
 
   return (
     <>
       <ProfileView profile={profile} />
       <nav className="flex gap-4 text-sm underline">
-        <Link href="/browse">Browse</Link>
-        <Link href="/likes">Likes</Link>
         <Link href="/photos">Edit photos</Link>
         <Link href="/personality">Retake questions</Link>
         <Link href="/prompts">Edit prompts</Link>

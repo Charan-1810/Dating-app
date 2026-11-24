@@ -1,7 +1,9 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { login, signup } from "./actions";
+import { APP_NAME, TAGLINE } from "@/lib/brand";
 
 export default function LoginPage() {
   const [loginState, loginAction, loginPending] = useActionState(login, null);
@@ -13,7 +15,8 @@ export default function LoginPage() {
   return (
     <main className="flex min-h-screen items-center justify-center p-4">
       <form className="flex w-full max-w-sm flex-col gap-3">
-        <h1 className="text-2xl font-semibold">Welcome</h1>
+        <h1 className="text-3xl font-semibold">{APP_NAME}</h1>
+        <p className="text-gray-600">{TAGLINE}</p>
 
         <input
           name="email"
@@ -47,6 +50,14 @@ export default function LoginPage() {
         >
           Create account
         </button>
+
+        <p className="text-center text-xs text-gray-500">
+          18+ only. By creating an account you agree to our{" "}
+          <Link href="/legal" className="underline">
+            Terms &amp; Privacy
+          </Link>
+          .
+        </p>
       </form>
     </main>
   );

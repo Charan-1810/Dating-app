@@ -1,4 +1,4 @@
-import { getAge, INTENTS } from "@/lib/options";
+import { getAge, INTENTS, isActiveThisWeek } from "@/lib/options";
 import { getTraits, QUESTIONS } from "@/lib/questions";
 import { promptText } from "@/lib/prompts";
 import { photoUrl } from "@/lib/photos";
@@ -78,6 +78,9 @@ export default function ProfileView({ profile, likeTo = null }) {
         <p className="text-gray-600">
           {profile.city} · {intent}
         </p>
+        {isActiveThisWeek(profile.last_active_at) && (
+          <p className="text-sm text-green-700">● Active this week</p>
+        )}
       </header>
       {items}
     </article>

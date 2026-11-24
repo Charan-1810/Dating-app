@@ -20,7 +20,13 @@ export default function LikeNotifications() {
 
   // 1. Who's logged in? Re-checked on every page change (handles login/logout)
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
+    supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id ?? null;
+      setUserId(id);
+      // Record activity for auto-pause. The database only writes if it's been 5+ minutes.
+      // .then() is needed: Supabase queries don't run until you await or .then() them.
+      if (id) supabase.rpc("touch_last_active").then(() => {});
+    });
   }, [supabase, pathname]);
 
   // 2. Count likes received since I last opened /likes

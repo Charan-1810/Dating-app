@@ -1,8 +1,12 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { createProfile } from "./actions";
 import { CITIES, GENDERS, INTERESTED_IN, INTENTS } from "@/lib/options";
+import SelectField from "@/components/select-field";
+
+const CITY_OPTIONS = CITIES.map((c) => ({ value: c, label: c }));
 
 export default function OnboardingPage() {
   const [state, formAction, pending] = useActionState(createProfile, null);
@@ -22,14 +26,20 @@ export default function OnboardingPage() {
           <input name="birthdate" type="date" required className="rounded border p-2" />
         </label>
 
-        <Select label="I am a" name="gender" options={GENDERS} />
-        <Select label="Interested in" name="interested_in" options={INTERESTED_IN} />
-        <Select
-          label="City"
-          name="city"
-          options={CITIES.map((c) => ({ value: c, label: c }))}
-        />
-        <Select label="Looking for" name="intent" options={INTENTS} />
+        <SelectField label="I am a" name="gender" options={GENDERS} />
+        <SelectField label="Interested in" name="interested_in" options={INTERESTED_IN} />
+        <SelectField label="City" name="city" options={CITY_OPTIONS} />
+        <SelectField label="Looking for" name="intent" options={INTENTS} />
+
+        {/* Opt-in only: DPDP requires explicit consent before using eLitmus data */}
+        <label className="flex items-start gap-2 rounded border p-3 text-sm">
+          <input type="checkbox" name="elitmus_consent" className="mt-1" />
+          <span>
+            <strong>Verify me with eLitmus</strong> (optional). We check whether this email is in
+            eLitmus&apos;s candidate records and, if so, add a ✓ Verified badge. Nothing else is
+            imported.
+          </span>
+        </label>
 
         {state?.error && <p className="text-sm text-red-600">{state.error}</p>}
 
@@ -39,25 +49,11 @@ export default function OnboardingPage() {
         >
           {pending ? "Saving..." : "Continue"}
         </button>
+
+        <p className="text-center text-xs text-gray-500">
+          See our <Link href="/legal" className="underline">Terms &amp; Privacy</Link>
+        </p>
       </form>
     </main>
-  );
-}
-
-function Select({ label, name, options }) {
-  return (
-    <label className="flex flex-col gap-1 text-sm">
-      {label}
-      <select name={name} required defaultValue="" className="rounded border p-2">
-        <option value="" disabled>
-          Choose...
-        </option>
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
   );
 }

@@ -31,12 +31,26 @@ export function getAge(birthdate) {
     (today.getMonth() === dob.getMonth() && today.getDate() >= dob.getDate());
   return hadBirthday ? age : age - 1;
 }
+
 // The date exactly `years` ago today, as "YYYY-MM-DD"
 export function dateYearsAgo(years) {
   const d = new Date();
   d.setFullYear(d.getFullYear() - years);
   return d.toISOString().slice(0, 10);
 }
+
+// Profiles inactive for this many days are hidden from browse ("auto-pause")
+export const PAUSE_AFTER_DAYS = 14;
+
+// The moment exactly `days` ago, as a full timestamp
+export function daysAgo(days) {
+  return new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+}
+
+export function isActiveThisWeek(lastActiveAt) {
+  return Boolean(lastActiveAt) && new Date(lastActiveAt) >= new Date(daysAgo(7));
+}
+
 export const REPORT_REASONS = [
   { value: "fake", label: "Fake profile or catfish" },
   { value: "photos", label: "Inappropriate photos" },
