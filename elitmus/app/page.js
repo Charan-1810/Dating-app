@@ -42,6 +42,7 @@ async function MyProfile() {
       <ProfileView profile={profile} />
       <nav className="flex gap-4 text-sm underline">
         <Link href="/browse">Browse</Link>
+        <Link href="/likes">Likes</Link>
         <Link href="/photos">Edit photos</Link>
         <Link href="/personality">Retake questions</Link>
         <Link href="/prompts">Edit prompts</Link>

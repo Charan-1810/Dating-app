@@ -13,9 +13,10 @@ export default function BrowsePage({ searchParams }) {
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-4">
       <header className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Browse</h1>
-        <Link href="/" className="text-sm underline">
-          My profile
-        </Link>
+        <div className="flex gap-4">
+          <Link href="/likes" className="text-sm underline">Likes</Link>
+          <Link href="/" className="text-sm underline">My profile</Link>
+        </div>
       </header>
       <Suspense fallback={<p className="text-gray-500">Loading profiles...</p>}>
         <BrowseResults searchParams={searchParams} />
