@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SendIcon } from "@/components/icons";
-import { useChatTheme } from "@/lib/chat-themes";
+import { useChatTheme } from "@/components/chat-theme";
 
 // Add a message unless it's already in the list (it can arrive twice: from our insert AND from Realtime)
 function appendUnique(list, msg) {
@@ -30,7 +30,7 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
-  const theme = useChatTheme(matchId);
+  const { theme } = useChatTheme();
 
   // Live: receive new messages in this match
   useEffect(() => {

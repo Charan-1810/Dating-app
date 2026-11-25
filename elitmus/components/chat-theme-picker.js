@@ -1,13 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { CHAT_THEMES, setChatTheme, useChatTheme } from "@/lib/chat-themes";
+import { CHAT_THEMES } from "@/lib/chat-themes";
+import { useChatTheme } from "./chat-theme";
 import { CheckIcon, PaletteIcon } from "./icons";
 
 // Palette button in the chat header; opens a small grid of theme swatches.
-export default function ChatThemePicker({ matchId }) {
+export default function ChatThemePicker() {
   const [open, setOpen] = useState(false);
-  const current = useChatTheme(matchId);
+  const { theme: current, changeTheme, error } = useChatTheme();
 
   return (
     <div className="relative">
@@ -21,6 +22,12 @@ export default function ChatThemePicker({ matchId }) {
         <PaletteIcon className="size-4" />
         <span className="hidden sm:inline">Theme</span>
       </button>
+
+      {error && !open && (
+        <p className="absolute top-full right-0 z-50 mt-2 w-56 rounded-2xl bg-red-50 px-3 py-2 text-xs text-red-700 shadow-card">
+          {error}
+        </p>
+      )}
 
       {open && (
         <>
@@ -36,7 +43,7 @@ export default function ChatThemePicker({ matchId }) {
                     key={t.id}
                     type="button"
                     onClick={() => {
-                      setChatTheme(matchId, t.id);
+                      changeTheme(t.id);
                       setOpen(false);
                     }}
                     className="flex flex-col items-center gap-1.5 rounded-2xl p-1.5 text-xs transition hover:bg-sand"
@@ -64,7 +71,7 @@ export default function ChatThemePicker({ matchId }) {
                 );
               })}
             </div>
-            <p className="px-1 pt-2 text-[11px] leading-snug text-muted">Only changes how this chat looks for you.</p>
+            <p className="px-1 pt-2 text-[11px] leading-snug text-muted">Both of you see the theme you pick.</p>
           </div>
         </>
       )}

@@ -9,6 +9,8 @@ import { Avatar, Spinner } from "@/components/ui";
 import { ChevronLeftIcon, HeartIcon, ShieldIcon } from "@/components/icons";
 import ChatRoom from "./chat-room";
 import ChatThemePicker from "@/components/chat-theme-picker";
+import { ChatThemeProvider } from "@/components/chat-theme";
+import { DEFAULT_THEME_ID } from "@/lib/chat-themes";
 
 export default function ChatPage({ params }) {
   return (
@@ -39,7 +41,7 @@ async function ChatLoader({ params }) {
 
   const otherId = match.user_a === user.id ? match.user_b : match.user_a;
 
-  const [{ data: other }, { data: openers }, { data: messages }] = await Promise.all([
+  const [{ data: other }, { data: openers }, { data: messages }, { data: themeRow }] = await Promise.all([
     supabase
       .from("profiles")
       .select("id, name, photos(path, position)")
@@ -57,12 +59,15 @@ async function ChatLoader({ params }) {
       .select("id, sender_id, body, created_at")
       .eq("match_id", matchId)
       .order("created_at"),
+    // Asked for separately so the chat still opens (with the default theme)
+    // if this column doesn't exist yet, i.e. before step-14 SQL is run
+    supabase.from("matches").select("chat_theme").eq("id", matchId).maybeSingle(),
   ]);
 
   const photo = mainPhoto(other.photos);
 
   return (
-    <>
+    <ChatThemeProvider matchId={matchId} initialTheme={themeRow?.chat_theme ?? DEFAULT_THEME_ID}>
       <header className="relative z-10 flex items-center gap-2 border-b border-line bg-paper px-2 py-2.5 sm:px-4">
         <Link href="/likes" aria-label="Back to likes" className="btn btn-ghost size-10 p-0">
           <ChevronLeftIcon className="size-5" />
@@ -75,7 +80,7 @@ async function ChatLoader({ params }) {
           </span>
         </Link>
         <div className="ml-auto flex items-center">
-          <ChatThemePicker matchId={matchId} />
+          <ChatThemePicker />
           <Link href={`/profile/${other.id}#safety`} className="btn btn-ghost px-3 text-muted" title="Report or block">
             <ShieldIcon className="size-4" />
             <span className="hidden sm:inline">Safety</span>
@@ -96,6 +101,6 @@ async function ChatLoader({ params }) {
           </div>
         ))}
       </ChatRoom>
-    </>
+    </ChatThemeProvider>
   );
 }

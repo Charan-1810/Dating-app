@@ -1,7 +1,3 @@
-"use client";
-
-import { useSyncExternalStore } from "react";
-
 // Chat themes. Each one is just a set of colours; the chat reads them as inline styles.
 //   bg      background of the message area (CSS `background`, so gradients and patterns work)
 //   mine    my bubbles          mineText   text on my bubbles
@@ -84,46 +80,9 @@ export const CHAT_THEMES = [
   },
 ];
 
-const DEFAULT_ID = CHAT_THEMES[0].id;
-const storageKey = (matchId) => `chat-theme:${matchId}`;
+export const DEFAULT_THEME_ID = CHAT_THEMES[0].id;
 
-// A tiny "store" on top of localStorage, so every component showing this chat
-// (the picker in the header and the messages below) updates together.
-const listeners = new Set();
-
-function subscribe(callback) {
-  listeners.add(callback);
-  window.addEventListener("storage", callback); // another tab changed it
-  return () => {
-    listeners.delete(callback);
-    window.removeEventListener("storage", callback);
-  };
-}
-
-function readThemeId(matchId) {
-  try {
-    return localStorage.getItem(storageKey(matchId)) ?? DEFAULT_ID;
-  } catch {
-    return DEFAULT_ID; // private window / storage blocked: just use the default
-  }
-}
-
-export function setChatTheme(matchId, themeId) {
-  try {
-    localStorage.setItem(storageKey(matchId), themeId);
-  } catch {
-    // ignore: the theme just won't be remembered
-  }
-  listeners.forEach((l) => l());
-}
-
-// The server can't see localStorage, so it renders the default theme;
-// the browser then switches to the saved one right after loading.
-export function useChatTheme(matchId) {
-  const id = useSyncExternalStore(
-    subscribe,
-    () => readThemeId(matchId),
-    () => DEFAULT_ID
-  );
+// Unknown or missing ids fall back to the default
+export function themeById(id) {
   return CHAT_THEMES.find((t) => t.id === id) ?? CHAT_THEMES[0];
 }
