@@ -2,15 +2,17 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import PersonalityForm from "./personality-form";
+import { PageHeader, Spinner, Stepper } from "@/components/ui";
 
 export default function PersonalityPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">How do you handle…</h1>
-      <p className="text-sm text-gray-500">
-        {"No right answers. Pick what you'd actually do — it builds your trait summary."}
-      </p>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="page-narrow">
+      <Stepper current={2} />
+      <PageHeader
+        title="What would you actually do?"
+        subtitle="Ten everyday situations, no right answers. Your choices build a short trait summary (inspired by the Big Five) that others see on your profile."
+      />
+      <Suspense fallback={<Spinner />}>
         <PersonalityLoader />
       </Suspense>
     </main>

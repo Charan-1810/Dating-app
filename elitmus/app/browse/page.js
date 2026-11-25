@@ -2,16 +2,23 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { CITIES, INTENTS, PAUSE_AFTER_DAYS, dateYearsAgo, daysAgo } from "@/lib/options";
+import Link from "next/link";
 import ProfileCard from "@/components/profile-card";
+import { CardGridSkeleton, EmptyState, PageHeader } from "@/components/ui";
+import { SearchIcon } from "@/components/icons";
 
 const GENDER_FOR = { women: "woman", men: "man" };
 const GROUP_FOR = { woman: "women", man: "men" };
 
 export default function BrowsePage({ searchParams }) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-4xl flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">Browse</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading profiles...</p>}>
+    <main className="page">
+      <PageHeader
+        eyebrow="Browse"
+        title="People worth reading"
+        subtitle="Search what people actually wrote. Everyone here has been active in the last two weeks."
+      />
+      <Suspense fallback={<CardGridSkeleton />}>
         <BrowseResults searchParams={searchParams} />
       </Suspense>
     </main>
@@ -43,12 +50,13 @@ async function BrowseResults({ searchParams }) {
   let query = supabase
     .from("profiles")
     .select(
-      "id, name, birthdate, city, is_verified, personality, last_active_at, photos(path, position), prompt_answers!inner(answer)"
+      "id, name, birthdate, city, is_verified, personality, last_active_at, photos(path, position), prompt_answers!inner(position, answer)"
     )
     .neq("id", user.id)
     .gte("last_active_at", daysAgo(PAUSE_AFTER_DAYS)) // auto-pause: hide inactive profiles
     .order("last_active_at", { ascending: false })
     .order("position", { referencedTable: "photos" })
+    .order("position", { referencedTable: "prompt_answers" })
     .limit(50);
 
   // Two-way matching: they fit what I want, and I fit what they want
@@ -70,47 +78,66 @@ async function BrowseResults({ searchParams }) {
   const { data: profiles, error } = await query;
   if (error) throw new Error(error.message);
 
+  const hasFilters = Boolean(q || city || intent || minAge || maxAge);
+
   return (
-    <>
-      <form className="grid grid-cols-2 gap-2 rounded-lg border p-3 sm:grid-cols-6">
-        <input
-          name="q"
-          defaultValue={q}
-          placeholder="Search answers (e.g. trekking)"
-          className="col-span-2 rounded border p-2"
-        />
-        <input name="min_age" type="number" min={18} max={99} defaultValue={minAge ?? ""} placeholder="Min age" className="rounded border p-2" />
-        <input name="max_age" type="number" min={18} max={99} defaultValue={maxAge ?? ""} placeholder="Max age" className="rounded border p-2" />
-        <select name="city" defaultValue={city} className="rounded border p-2">
-          <option value="">Any city</option>
-          {CITIES.map((c) => (
-            <option key={c} value={c}>{c}</option>
-          ))}
-        </select>
-        <select name="intent" defaultValue={intent} className="rounded border p-2">
-          <option value="">Any intent</option>
-          {INTENTS.map((i) => (
-            <option key={i.value} value={i.value}>{i.label}</option>
-          ))}
-        </select>
-        <button className="col-span-2 rounded bg-black p-2 text-white sm:col-span-6">Search</button>
+    <div className="flex flex-col gap-5">
+      <form className="card flex flex-col gap-3 p-3 sm:p-4">
+        <div className="relative">
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder="Search answers: trekking, biryani, startups…"
+            className="field pl-12"
+          />
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-[0.8fr_0.8fr_1.2fr_1.5fr_auto]">
+          <input name="min_age" type="number" min={18} max={99} defaultValue={minAge ?? ""} placeholder="Min age" className="field" />
+          <input name="max_age" type="number" min={18} max={99} defaultValue={maxAge ?? ""} placeholder="Max age" className="field" />
+          <select name="city" defaultValue={city} className="field">
+            <option value="">Any city</option>
+            {CITIES.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+          <select name="intent" defaultValue={intent} className="field">
+            <option value="">Any intent</option>
+            {INTENTS.map((i) => (
+              <option key={i.value} value={i.value}>{i.label}</option>
+            ))}
+          </select>
+          <button className="btn btn-primary col-span-2 py-3 sm:col-span-1">Search</button>
+        </div>
       </form>
 
-      <p className="text-sm text-gray-500">
-        {profiles.length} {profiles.length === 1 ? "person" : "people"} · profiles inactive for{" "}
-        {PAUSE_AFTER_DAYS}+ days are paused, so everyone here is real and around
-      </p>
+      <div className="flex items-center justify-between gap-4 px-1 text-sm text-ink-soft">
+        <p>
+          <span className="font-medium text-ink">{profiles.length}</span>{" "}
+          {profiles.length === 1 ? "person" : "people"}
+          {q && <> mentioning &ldquo;{q}&rdquo;</>}
+        </p>
+        {hasFilters && (
+          <Link href="/browse" className="text-sm underline underline-offset-2 hover:text-ink">
+            Clear filters
+          </Link>
+        )}
+      </div>
 
       {profiles.length === 0 ? (
-        <p className="py-12 text-center text-gray-500">No one matches these filters yet. Try widening them.</p>
+        <EmptyState
+          icon={SearchIcon}
+          title="No one here yet"
+          text={`No active profiles match these filters. Try widening them. Profiles inactive for ${PAUSE_AFTER_DAYS}+ days are paused.`}
+        />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-3">
           {profiles.map((p) => (
             <ProfileCard key={p.id} profile={p} />
           ))}
         </div>
       )}
-    </>
+    </div>
   );
 }
 

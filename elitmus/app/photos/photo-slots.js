@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { CameraIcon, XIcon } from "@/components/icons";
 
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB, same as the bucket limit
 
@@ -59,7 +60,7 @@ export default function PhotoSlots({ userId, photos }) {
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         {[1, 2, 3].map((position) => {
           const photo = photos.find((p) => p.position === position);
           const busy = busySlot === position;
@@ -67,23 +68,34 @@ export default function PhotoSlots({ userId, photos }) {
           return (
             <div
               key={position}
-              className="relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-lg border bg-gray-50"
+              className="relative aspect-[4/5] overflow-hidden rounded-3xl bg-sand shadow-card"
             >
               {busy ? (
-                <span className="text-sm text-gray-500">Working...</span>
+                <div className="grid size-full place-items-center">
+                  <span className="size-6 animate-spin rounded-full border-2 border-line border-t-ink" />
+                </div>
               ) : photo ? (
                 <>
-                  <img src={photo.url} alt={`Photo ${position}`} className="h-full w-full object-cover" />
+                  <img src={photo.url} alt={`Photo ${position}`} className="size-full animate-rise object-cover" />
                   <button
                     onClick={() => remove(photo)}
-                    className="absolute right-1 top-1 rounded bg-white/90 px-2 text-sm"
+                    aria-label={`Remove photo ${position}`}
+                    className="absolute top-2 right-2 grid size-8 place-items-center rounded-full bg-black/50 text-white backdrop-blur transition hover:bg-black/70"
                   >
-                    ✕
+                    <XIcon className="size-4" />
                   </button>
+                  {position === 1 && (
+                    <span className="chip absolute bottom-2 left-2 bg-white/90 px-2.5 py-0.5 text-[11px] backdrop-blur">
+                      Main
+                    </span>
+                  )}
                 </>
               ) : (
-                <label className="cursor-pointer p-4 text-center text-sm text-gray-500">
-                  + Add photo
+                <label className="flex size-full cursor-pointer flex-col items-center justify-center gap-2 rounded-3xl border-2 border-dashed border-line bg-surface text-center text-ink-soft transition hover:border-ink/30 hover:bg-paper">
+                  <span className="grid size-11 place-items-center rounded-full bg-sand">
+                    <CameraIcon className="size-5" />
+                  </span>
+                  <span className="text-xs font-medium sm:text-sm">{position === 1 ? "Main photo" : "Add photo"}</span>
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
@@ -97,7 +109,8 @@ export default function PhotoSlots({ userId, photos }) {
         })}
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      <p className="text-xs text-muted">JPG, PNG or WebP, up to 5 MB each.</p>
+      {error && <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
     </div>
   );
 }

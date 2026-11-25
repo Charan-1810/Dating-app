@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SendIcon } from "@/components/icons";
 
 // Add a message unless it's already in the list (it can arrive twice: from our insert AND from Realtime)
 function appendUnique(list, msg) {
@@ -22,7 +23,7 @@ function formatTime(iso) {
   return `${hours12}:${minutes} ${period}`;
 }
 
-export default function ChatRoom({ matchId, userId, initialMessages, children }) {
+export default function ChatRoom({ matchId, userId, initialMessages, otherName, children }) {
   const [supabase] = useState(() => createClient());
   const [messages, setMessages] = useState(initialMessages);
   const [text, setText] = useState("");
@@ -74,20 +75,30 @@ export default function ChatRoom({ matchId, userId, initialMessages, children })
 
   return (
     <>
-      <div className="flex flex-1 flex-col gap-2 overflow-y-auto py-4">
-        {children}
+      <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-4 py-6">
+        <div className="mb-6 flex flex-col gap-3">{children}</div>
 
-        {messages.map((m) => {
+        {messages.length === 0 && (
+          <p className="py-4 text-center text-sm text-muted">
+            Say hello to {otherName}. Pick up from what they liked, it&apos;s the easiest opener there is.
+          </p>
+        )}
+
+        {messages.map((m, i) => {
           const mine = m.sender_id === userId;
+          // Group consecutive messages from the same person: less spacing, one time stamp style
+          const firstOfGroup = messages[i - 1]?.sender_id !== m.sender_id;
           return (
             <div
               key={m.id}
-              className={`max-w-[75%] rounded-2xl px-3 py-2 ${
-                mine ? "self-end bg-black text-white" : "self-start bg-gray-100"
+              className={`max-w-[78%] animate-rise rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed ${firstOfGroup ? "mt-2" : ""} ${
+                mine
+                  ? "self-end rounded-br-lg bg-accent text-white"
+                  : "self-start rounded-bl-lg border border-line bg-surface"
               }`}
             >
               <p className="whitespace-pre-line">{m.body}</p>
-              <p className={`mt-0.5 text-[10px] ${mine ? "text-gray-300" : "text-gray-500"}`}>
+              <p className={`mt-0.5 text-right text-[10px] ${mine ? "text-white/70" : "text-muted"}`}>
                 {formatTime(m.created_at)}
               </p>
             </div>
@@ -97,17 +108,23 @@ export default function ChatRoom({ matchId, userId, initialMessages, children })
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="px-4 pb-2 text-sm text-red-600">{error}</p>}
 
-      <form onSubmit={send} className="flex gap-2 border-t pt-3">
+      <form onSubmit={send} className="flex items-center gap-2 border-t border-line bg-paper/90 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-4">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Type a message…"
+          placeholder={`Message ${otherName}…`}
           maxLength={2000}
-          className="flex-1 rounded-full border px-4 py-2"
+          className="field rounded-full py-3"
         />
-        <button className="rounded-full bg-black px-4 py-2 text-white">Send</button>
+        <button
+          aria-label="Send"
+          disabled={!text.trim()}
+          className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-white transition hover:bg-accent-dark active:scale-95 disabled:opacity-40"
+        >
+          <SendIcon className="size-5" />
+        </button>
       </form>
     </>
   );

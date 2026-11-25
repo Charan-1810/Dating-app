@@ -2,9 +2,11 @@ import { getAge, INTENTS, isActiveThisWeek } from "@/lib/options";
 import { getTraits, QUESTIONS } from "@/lib/questions";
 import { promptText } from "@/lib/prompts";
 import { photoUrl } from "@/lib/photos";
-import LikeButton from "./like-button"; // NEW
+import LikeButton from "./like-button";
+import { ActiveBadge, VerifiedBadge } from "./ui";
+import { MapPinIcon, SparklesIcon, TargetIcon } from "./icons";
 
-// NEW: likeTo = the profile owner's id when likes are allowed, otherwise null
+// likeTo = the profile owner's id when likes are allowed, otherwise null
 export default function ProfileView({ profile, likeTo = null }) {
   const intent = INTENTS.find((i) => i.value === profile.intent)?.label;
   const traits = getTraits(profile.personality);
@@ -18,10 +20,10 @@ export default function ProfileView({ profile, likeTo = null }) {
     }))
     .filter((s) => s.answer);
 
-  // NEW: wrap any block with a Like button underneath (only when likeTo is set)
+  // Wrap any block so it gets a Like button (only when likeTo is set)
   function likeable(key, target, content) {
     return (
-      <div key={key} className="flex flex-col gap-2">
+      <div key={key} className="relative flex animate-rise flex-col gap-3">
         {content}
         {likeTo && <LikeButton toUserId={likeTo} target={target} />}
       </div>
@@ -31,25 +33,33 @@ export default function ProfileView({ profile, likeTo = null }) {
   const blocks = [];
   if (scenarios[0]) {
     blocks.push(likeable("scenario-0", scenarios[0].question,
-      <Card label={scenarios[0].question} text={scenarios[0].answer} />));
+      <AnswerCard eyebrow="Scenario" label={scenarios[0].question} text={scenarios[0].answer} />));
   }
   if (traits.length > 0) {
     blocks.push(likeable("traits", "Traits",
-      <div className="flex flex-wrap gap-2 rounded-lg border p-4">
-        {traits.map((t) => (
-          <span key={t} className="rounded-full bg-gray-100 px-3 py-1 text-sm">{t}</span>
-        ))}
-      </div>));
+      <section className="card p-6 sm:p-7">
+        <p className="eyebrow">Personality</p>
+        <p className="mt-1 text-sm text-ink-soft">From 10 real-life scenarios, not a self-description</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {traits.map((t) => (
+            <span key={t} className="chip bg-accent-soft py-1.5 text-[15px] text-accent-dark">
+              <SparklesIcon className="size-4" />
+              {t}
+            </span>
+          ))}
+        </div>
+      </section>));
   }
   for (const p of prompts) {
     blocks.push(likeable(`prompt-${p.position}`, promptText(p.prompt_id),
-      <Card label={promptText(p.prompt_id)} text={p.answer} />));
+      <AnswerCard label={promptText(p.prompt_id)} text={p.answer} />));
   }
   if (scenarios[1]) {
     blocks.push(likeable("scenario-1", scenarios[1].question,
-      <Card label={scenarios[1].question} text={scenarios[1].answer} />));
+      <AnswerCard eyebrow="Scenario" label={scenarios[1].question} text={scenarios[1].answer} />));
   }
 
+  // Interleave: photo, answer, photo, answer… so photos sit alongside words
   const items = [];
   const count = Math.max(photos.length, blocks.length);
   for (let i = 0; i < count; i++) {
@@ -58,40 +68,47 @@ export default function ProfileView({ profile, likeTo = null }) {
         <img
           src={photoUrl(photos[i].path)}
           alt={`${profile.name}'s photo ${i + 1}`}
-          className="aspect-[3/4] w-full rounded-lg object-cover"
+          className="aspect-[4/5] w-full rounded-3xl bg-sand object-cover shadow-card"
         />));
     }
     if (blocks[i]) items.push(blocks[i]);
   }
 
   return (
-    <article className="flex w-full max-w-md flex-col gap-3">
-      <header>
-        <h1 className="text-2xl font-semibold">
-          {profile.name}, {getAge(profile.birthdate)}
-          {profile.is_verified && (
-            <span className="ml-2 rounded-full bg-blue-100 px-2 py-0.5 align-middle text-xs text-blue-700">
-              ✓ Verified
+    <article className="flex w-full flex-col gap-4">
+      <header className="card p-6 sm:p-7">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+          <h1 className="font-display text-4xl leading-none font-medium tracking-tight sm:text-5xl">{profile.name}</h1>
+          <span className="font-display text-3xl font-light text-ink-soft sm:text-4xl">{getAge(profile.birthdate)}</span>
+        </div>
+        <div className="mt-5 flex flex-wrap gap-2">
+          <span className="chip bg-sand text-ink-soft">
+            <MapPinIcon className="size-4" />
+            {profile.city}
+          </span>
+          {intent && (
+            <span className="chip bg-sand text-ink-soft">
+              <TargetIcon className="size-4" />
+              {intent}
             </span>
           )}
-        </h1>
-        <p className="text-gray-600">
-          {profile.city} · {intent}
-        </p>
-        {isActiveThisWeek(profile.last_active_at) && (
-          <p className="text-sm text-green-700">● Active this week</p>
-        )}
+          {profile.is_verified && <VerifiedBadge />}
+          {isActiveThisWeek(profile.last_active_at) && <ActiveBadge />}
+        </div>
       </header>
       {items}
     </article>
   );
 }
 
-function Card({ label, text }) {
+function AnswerCard({ eyebrow, label, text }) {
   return (
-    <div className="rounded-lg border p-4">
-      <p className="text-sm text-gray-500">{label}</p>
-      <p className="mt-1 whitespace-pre-line text-lg">{text}</p>
-    </div>
+    <section className="card p-6 sm:p-7">
+      {eyebrow && <p className="eyebrow mb-1">{eyebrow}</p>}
+      <p className="text-sm font-medium text-ink-soft">{label}</p>
+      <p className="mt-3 pr-10 font-display text-[1.375rem] leading-snug whitespace-pre-line text-pretty sm:text-2xl">
+        {text}
+      </p>
+    </section>
   );
 }

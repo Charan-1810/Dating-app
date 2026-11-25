@@ -1,7 +1,6 @@
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fraunces } from "next/font/google";
 import "./globals.css";
 import { Suspense } from "react";
-import LikeNotifications from "@/components/like-notifications";
 import NavBar from "@/components/nav-bar";
 import { APP_NAME, TAGLINE } from "@/lib/brand";
 
@@ -15,26 +14,36 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Display serif for names, headings and prompt answers: makes people's words the hero
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
+  subsets: ["latin"],
+  style: ["normal", "italic"],
+  axes: ["SOFT", "opsz"],
+});
+
 export const metadata = {
-  title: APP_NAME,
+  title: { default: APP_NAME, template: `%s · ${APP_NAME}` },
   description: TAGLINE,
+};
+
+export const viewport = {
+  themeColor: "#faf7f2",
 };
 
 export default function RootLayout({ children }) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-full flex-col">
+        {/* NavBar also runs live notifications (toast + unread likes badge) */}
         <Suspense fallback={null}>
           <NavBar />
-          <LikeNotifications />
         </Suspense>
         {children}
       </body>
     </html>
   );
 }
-
-        

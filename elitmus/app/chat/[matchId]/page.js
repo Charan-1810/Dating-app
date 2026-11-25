@@ -3,13 +3,17 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { photoUrl } from "@/lib/photos";
+import { mainPhoto } from "@/lib/photos";
+import { describeTarget } from "@/lib/prompts";
+import { Avatar, Spinner } from "@/components/ui";
+import { ChevronLeftIcon, HeartIcon, ShieldIcon } from "@/components/icons";
 import ChatRoom from "./chat-room";
 
 export default function ChatPage({ params }) {
   return (
-    <main className="mx-auto flex h-screen max-w-xl flex-col p-4">
-      <Suspense fallback={<p className="text-gray-500">Loading chat...</p>}>
+    // Full height minus the 3.5rem top bar, so only the messages scroll
+    <main className="mx-auto flex h-[calc(100dvh-3.5rem)] w-full max-w-2xl flex-col">
+      <Suspense fallback={<Spinner label="Loading chat" />}>
         <ChatLoader params={params} />
       </Suspense>
     </main>
@@ -54,29 +58,37 @@ async function ChatLoader({ params }) {
       .order("created_at"),
   ]);
 
-  const photo = other.photos?.[0];
+  const photo = mainPhoto(other.photos);
 
   return (
     <>
-      <header className="flex items-center gap-3 border-b pb-3">
-        <Link href="/likes" className="text-sm underline">← Likes</Link>
-        <Link href={`/profile/${other.id}`} className="flex items-center gap-2">
-          {photo && (
-            <img src={photoUrl(photo.path)} alt="" className="h-9 w-9 rounded-full object-cover" />
-          )}
-          <span className="font-medium">{other.name}</span>
+      <header className="flex items-center gap-2 border-b border-line px-2 py-2.5 sm:px-4">
+        <Link href="/likes" aria-label="Back to likes" className="btn btn-ghost size-10 p-0">
+          <ChevronLeftIcon className="size-5" />
         </Link>
-        <Link href={`/profile/${other.id}#safety`} className="ml-auto text-sm text-gray-500 underline">
-          Report / Block
+        <Link href={`/profile/${other.id}`} className="flex min-w-0 items-center gap-3 rounded-full py-1 pr-3 hover:bg-sand">
+          <Avatar path={photo?.path} name={other.name} className="size-10 text-lg" />
+          <span className="flex min-w-0 flex-col leading-tight">
+            <span className="truncate font-display text-lg">{other.name}</span>
+            <span className="text-xs text-muted">View profile</span>
+          </span>
+        </Link>
+        <Link href={`/profile/${other.id}#safety`} className="btn btn-ghost ml-auto px-3 text-muted" title="Report or block">
+          <ShieldIcon className="size-4" />
+          <span className="hidden sm:inline">Safety</span>
         </Link>
       </header>
 
-      <ChatRoom matchId={matchId} userId={user.id} initialMessages={messages ?? []}>
+      <ChatRoom matchId={matchId} userId={user.id} initialMessages={messages ?? []} otherName={other.name}>
+        <p className="eyebrow text-center">How it started</p>
         {openers.map((like) => (
-          <div key={like.from_user} className="mx-auto max-w-xs rounded-lg bg-gray-50 p-3 text-center text-sm text-gray-600">
-            {like.from_user === user.id ? "You" : other.name} liked{" "}
-            {like.from_user === user.id ? "their" : "your"} {like.target ?? "profile"}
-            {like.comment && <p className="mt-1 text-base text-gray-900">&ldquo;{like.comment}&rdquo;</p>}
+          <div key={like.from_user} className="card mx-auto flex w-full max-w-sm flex-col items-center gap-2 p-4 text-center">
+            <span className="flex items-center gap-1.5 text-xs text-ink-soft">
+              <HeartIcon className="size-3.5 fill-accent text-accent" />
+              {like.from_user === user.id ? "You" : other.name} liked{" "}
+              {describeTarget(like.target, like.from_user === user.id ? "their" : "your")}
+            </span>
+            {like.comment && <p className="font-display text-lg leading-snug">&ldquo;{like.comment}&rdquo;</p>}
           </div>
         ))}
       </ChatRoom>

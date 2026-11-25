@@ -2,12 +2,14 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { describeTarget } from "@/lib/prompts";
+import { HeartIcon, MessageIcon, SparklesIcon, XIcon } from "./icons";
 
-export default function LikeNotifications() {
+// A custom hook: all the live-notification logic in one reusable function.
+// The nav bar calls it and gets back { userId, unseen, toast, dismissToast }.
+export function useLiveNotifications(pathname) {
   const [supabase] = useState(() => createClient());
-  const pathname = usePathname();
   const [userId, setUserId] = useState(null);
   const [unseen, setUnseen] = useState(0);
   const [toast, setToast] = useState(null);
@@ -63,12 +65,11 @@ export default function LikeNotifications() {
             supabase.from("profiles").select("name").eq("id", fromId).single(),
             supabase.from("likes").select("id").eq("from_user", userId).eq("to_user", fromId).maybeSingle(),
           ]);
-          setToast({
-            text: myLike
-              ? `🎉 You matched with ${sender?.name}!`
-              : `♥ ${sender?.name} liked your ${payload.new.target ?? "profile"}`,
-            href: `/profile/${fromId}`,
-          });
+          setToast(
+            myLike
+              ? { kind: "match", title: `It's a match with ${sender?.name}!`, text: "Say hello while it's fresh.", href: `/profile/${fromId}` }
+              : { kind: "like", title: `${sender?.name} liked ${describeTarget(payload.new.target)}`, text: payload.new.comment, href: `/profile/${fromId}` }
+          );
           if (!myLike) setUnseen((n) => n + 1);
         }
       )
@@ -86,12 +87,8 @@ export default function LikeNotifications() {
             .select("name")
             .eq("id", msg.sender_id)
             .single();
-          const preview = msg.body.length > 60 ? `${msg.body.slice(0, 60)}…` : msg.body;
 
-          setToast({
-            text: `💬 ${sender?.name}: ${preview}`,
-            href: `/chat/${msg.match_id}`,
-          });
+          setToast({ kind: "message", title: sender?.name, text: msg.body, href: `/chat/${msg.match_id}` });
         }
       )
       .subscribe();
@@ -108,29 +105,31 @@ export default function LikeNotifications() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  if (!userId) return null;
+  return { userId, unseen, toast, dismissToast: () => setToast(null) };
+}
 
+const TOAST_ICONS = { like: HeartIcon, match: SparklesIcon, message: MessageIcon };
+
+export function NotificationToast({ toast, onDismiss }) {
+  const Icon = TOAST_ICONS[toast.kind];
   return (
-    <>
-      <Link
-        href="/likes"
-        className="fixed right-4 top-4 z-50 rounded-full border bg-white px-3 py-1 text-sm shadow"
-      >
-        ♥
-        {unseen > 0 && (
-          <span className="ml-1 rounded-full bg-red-600 px-1.5 text-xs text-white">{unseen}</span>
-        )}
-      </Link>
-
-      {toast && (
-        <Link
-          href={toast.href}
-          onClick={() => setToast(null)}
-          className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-black px-4 py-3 text-white shadow-lg"
+    <div className="fixed inset-x-0 bottom-24 z-50 flex justify-center px-4 md:bottom-6">
+      <div className="card flex w-full max-w-sm animate-rise items-center gap-3 p-3 pr-2 shadow-lift">
+        <span
+          className={`grid size-10 shrink-0 place-items-center rounded-full ${
+            toast.kind === "match" ? "bg-accent text-white" : "bg-accent-soft text-accent"
+          }`}
         >
-          {toast.text}
+          <Icon className="size-5" />
+        </span>
+        <Link href={toast.href} onClick={onDismiss} className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{toast.title}</p>
+          {toast.text && <p className="truncate text-sm text-ink-soft">{toast.text}</p>}
         </Link>
-      )}
-    </>
+        <button onClick={onDismiss} aria-label="Dismiss" className="btn btn-ghost size-9 p-0">
+          <XIcon className="size-4" />
+        </button>
+      </div>
+    </div>
   );
 }

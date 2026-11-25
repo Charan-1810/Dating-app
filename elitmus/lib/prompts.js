@@ -13,3 +13,10 @@ export const PROMPTS = [
 export function promptText(id) {
   return PROMPTS.find((p) => p.id === id)?.text ?? "";
 }
+// Turns a like's `target` into readable text: "your photo", "your answer to “…”", etc.
+export function describeTarget(target, whose = "your") {
+  if (!target) return `${whose} profile`;
+  if (target.startsWith("Photo")) return `${whose} photo`;
+  if (target === "Traits") return `${whose} personality`;
+  return `${whose} answer to “${target}”`;
+}

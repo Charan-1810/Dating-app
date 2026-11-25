@@ -1,26 +1,109 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* ---------------------------------------------------------------------------
+   Design tokens. Every colour, font and shadow in the app comes from here,
+   so changing the look means changing one file. Tailwind turns each token
+   into utilities: --color-accent → bg-accent, text-accent, border-accent…
+--------------------------------------------------------------------------- */
+@theme {
+  --color-paper: #faf7f2;        /* page background: warm off-white */
+  --color-surface: #ffffff;      /* cards */
+  --color-sand: #f3eee6;         /* subtle fills, chips */
+  --color-line: #e9e2d7;         /* borders */
+  --color-ink: #1d1a17;          /* main text */
+  --color-ink-soft: #57514a;     /* secondary text */
+  --color-muted: #8f887f;        /* hints, labels */
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --color-accent: #e0533d;       /* the one brand colour: warm coral */
+  --color-accent-dark: #bf3f2b;
+  --color-accent-soft: #fcebe5;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --color-sage: #3d7a58;         /* "active" */
+  --color-sage-soft: #e5f0e9;
+  --color-sky: #2f62b0;          /* "verified" */
+  --color-sky-soft: #e5edf9;
+
+  --shadow-card: 0 1px 2px rgb(29 26 23 / 0.04), 0 10px 30px -18px rgb(29 26 23 / 0.18);
+  --shadow-lift: 0 2px 6px rgb(29 26 23 / 0.06), 0 24px 48px -20px rgb(29 26 23 / 0.32);
+
+  --animate-rise: rise 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: none; }
   }
 }
 
+/* Fonts are loaded by next/font in layout.js, which sets these CSS variables */
+@theme inline {
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-fraunces), Georgia, serif;
+}
+
+/* ---------------------------------------------------------------------------
+   Reusable building blocks. Pages use these short class names instead of
+   repeating 10 utilities on every button and input.
+--------------------------------------------------------------------------- */
+@layer components {
+  .page {
+    @apply mx-auto w-full max-w-5xl px-4 pt-6 pb-28 sm:px-6 sm:pt-10 md:pb-16;
+  }
+  .page-narrow {
+    @apply mx-auto w-full max-w-xl px-4 pt-6 pb-28 sm:px-6 sm:pt-10 md:pb-16;
+  }
+
+  .card {
+    @apply rounded-3xl border border-line bg-surface shadow-card;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-medium whitespace-nowrap transition duration-150 select-none active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-primary {
+    @apply bg-ink text-paper hover:bg-ink/85;
+  }
+  .btn-accent {
+    @apply bg-accent text-white shadow-[0_8px_20px_-8px_rgb(224_83_61/0.6)] hover:bg-accent-dark;
+  }
+  .btn-outline {
+    @apply border border-line bg-surface text-ink hover:border-ink/25 hover:bg-paper;
+  }
+  .btn-ghost {
+    @apply text-ink-soft hover:bg-sand hover:text-ink;
+  }
+  .btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700;
+  }
+
+  .field {
+    @apply w-full rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] text-ink outline-none transition placeholder:text-muted hover:border-ink/20 focus:border-ink/40 focus:ring-4 focus:ring-ink/5;
+  }
+  select.field {
+    @apply cursor-pointer appearance-none bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%238f887f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.9rem center;
+  }
+
+  .label {
+    @apply text-[13px] font-medium text-ink-soft;
+  }
+  .eyebrow {
+    @apply text-[11px] font-semibold tracking-[0.16em] text-muted uppercase;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[13px] font-medium;
+  }
+}
+
+html {
+  color-scheme: light;
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  @apply bg-paper font-sans text-ink;
+}
+
+::selection {
+  @apply bg-accent-soft text-ink;
 }

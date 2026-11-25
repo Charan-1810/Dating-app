@@ -6,14 +6,18 @@ import { createClient } from "@/lib/supabase/server";
 import ProfileView from "@/components/profile-view";
 import { LikeBackButton } from "@/components/like-button";
 import SafetyMenu from "@/components/safety-menu";
+import { describeTarget } from "@/lib/prompts";
+import { Spinner } from "@/components/ui";
+import { ChevronLeftIcon, HeartIcon, MessageIcon, SparklesIcon } from "@/components/icons";
 
 export default function ProfilePage({ params }) {
   return (
-    <main className="flex min-h-screen flex-col items-center gap-4 p-4">
-      <Link href="/browse" className="self-start text-sm underline">
-        ← Back to browse
+    <main className="mx-auto flex w-full max-w-lg flex-col gap-4 px-4 pt-4 pb-28 sm:px-6 sm:pt-6 md:pb-16">
+      <Link href="/browse" className="btn btn-ghost -ml-3 self-start pl-2">
+        <ChevronLeftIcon className="size-4" />
+        Browse
       </Link>
-      <Suspense fallback={<p className="text-gray-500">Loading profile...</p>}>
+      <Suspense fallback={<Spinner label="Loading profile" />}>
         <OtherProfile params={params} />
       </Suspense>
     </main>
@@ -62,39 +66,66 @@ async function OtherProfile({ params }) {
   return (
     <>
       {match && (
-        <Banner>
-          🎉 You and {profile.name} matched!{" "}
-          <Link href={`/chat/${match.id}`} className="font-medium underline">
-            Send a message →
+        <div className="relative animate-rise overflow-hidden rounded-3xl bg-linear-to-br from-accent to-[#f0905f] p-6 text-white shadow-lift">
+          <SparklesIcon className="absolute -top-2 -right-2 size-24 opacity-15" />
+          <p className="font-display text-3xl font-medium">It&apos;s a match!</p>
+          <p className="mt-1 text-white/85">You and {profile.name} liked each other.</p>
+          <Link href={`/chat/${match.id}`} className="btn mt-4 bg-white text-accent-dark hover:bg-white/90">
+            <MessageIcon className="size-4" />
+            Send a message
           </Link>
-        </Banner>
+        </div>
       )}
-      {myLike && !theirLike && (
-        <Banner>You liked {profile.name}. If they like you back, it&apos;s a match.</Banner>
+      {myLike && !theirLike && !match && (
+        <div className="card flex items-center gap-3 p-4 text-sm text-ink-soft">
+          <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent-soft text-accent">
+            <HeartIcon className="size-4" strokeWidth={2.2} />
+          </span>
+          You liked {profile.name}. If they like you back, it&apos;s a match.
+        </div>
       )}
       {theirLike && !myLike && (
-        <Banner>
-          <p className="text-sm text-gray-500">
-            {profile.name} liked your {theirLike.target ?? "profile"}
+        <div className="card animate-rise border-accent/30 p-5">
+          <p className="text-sm text-ink-soft">
+            <span className="font-medium text-ink">{profile.name}</span> liked {describeTarget(theirLike.target)}
           </p>
-          {theirLike.comment && <p className="my-1 text-lg">&ldquo;{theirLike.comment}&rdquo;</p>}
-          <LikeBackButton toUserId={id} />
-        </Banner>
+          {theirLike.comment && (
+            <p className="mt-3 rounded-2xl rounded-tl-md bg-accent-soft px-4 py-3 font-display text-xl leading-snug">
+              &ldquo;{theirLike.comment}&rdquo;
+            </p>
+          )}
+          <div className="mt-4">
+            <LikeBackButton toUserId={id} />
+          </div>
+        </div>
       )}
-      {!isMe && !myLike && !theirLike && (
-        <p className="text-sm text-gray-500">
-          {likesLeft > 0
-            ? `${likesLeft} of 5 likes left today. Like something specific and say why.`
-            : "You've used all 5 likes today. Come back tomorrow."}
-        </p>
-      )}
+      {!isMe && !myLike && !theirLike && <LikesLeft left={likesLeft} />}
       <ProfileView profile={profile} likeTo={canLike ? id : null} />
       {!isMe && <SafetyMenu userId={id} name={profile.name} />}
     </>
   );
 }
 
-function Banner({ children }) {
-  return <div className="w-full max-w-md rounded-lg border bg-gray-50 p-4">{children}</div>;
-
+// "●●●○○ 3 likes left today": makes the daily limit feel deliberate, not punishing
+function LikesLeft({ left }) {
+  return (
+    <div className="flex items-center gap-3 rounded-2xl bg-sand/70 px-4 py-3 text-sm text-ink-soft">
+      <span className="flex gap-1">
+        {[0, 1, 2, 3, 4].map((i) => (
+          <HeartIcon
+            key={i}
+            className={`size-4 ${i < left ? "fill-accent text-accent" : "text-line"}`}
+            strokeWidth={2}
+          />
+        ))}
+      </span>
+      {left > 0 ? (
+        <span>
+          <span className="font-medium text-ink">{left} left today.</span> Tap a heart on what you like and say why.
+        </span>
+      ) : (
+        <span>You&apos;ve used all 5 likes today. Come back tomorrow.</span>
+      )}
+    </div>
+  );
 }

@@ -2,6 +2,7 @@
 //
 //   Create:  node --env-file=.env.local scripts/seed-demo.mjs
 //   Delete:  node --env-file=.env.local scripts/seed-demo.mjs --delete
+//   Photos:  node --env-file=.env.local scripts/seed-demo.mjs --photos   (re-upload seed-photos/)
 //
 // It signs up each account through the normal public API (same rules as a real user),
 // so everything still goes through RLS. Safe to re-run: existing accounts are skipped.
@@ -187,5 +188,28 @@ async function remove(person) {
   return `gone  ${person.name}${isNew ? " (was not seeded)" : ""}`;
 }
 
-const action = process.argv.includes("--delete") ? remove : create;
+// Replace each demo account's photos with the current files in seed-photos/
+async function refreshPhotos(person) {
+  const { sb, id, isNew, error } = await signIn(person);
+  if (error || isNew) return `skip  ${person.name}: ${error ?? "not seeded"}`;
+  const { data: old } = await sb.from("photos").select("id, path").eq("user_id", id);
+  for (const p of old ?? []) {
+    await sb.from("photos").delete().eq("id", p.id);
+    await sb.storage.from("photos").remove([p.path]);
+  }
+  for (const position of [1, 2]) {
+    const file = await readFile(new URL(`${person.name.toLowerCase()}-${position}.jpg`, PHOTO_DIR));
+    const path = `${id}/${crypto.randomUUID()}.jpg`;
+    const { error: up } = await sb.storage.from("photos").upload(path, file, { contentType: "image/jpeg" });
+    if (up) return `FAIL  ${person.name} photo: ${up.message}`;
+    await sb.from("photos").insert({ user_id: id, path, position });
+  }
+  return `ok    ${person.name} photos replaced`;
+}
+
+const action = process.argv.includes("--delete")
+  ? remove
+  : process.argv.includes("--photos")
+    ? refreshPhotos
+    : create;
 for (const person of PEOPLE) console.log(await action(person));

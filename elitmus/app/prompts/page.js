@@ -2,15 +2,17 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import PromptsForm from "./prompts-form";
+import { PageHeader, Spinner, Stepper } from "@/components/ui";
 
 export default function PromptsPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-4 p-4">
-      <h1 className="text-2xl font-semibold">In your own words</h1>
-      <p className="text-sm text-gray-500">
-        {"Pick up to 3 prompts. Write as much as you like — real detail beats a clever one-liner."}
-      </p>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="page-narrow">
+      <Stepper current={3} />
+      <PageHeader
+        title="In your own words"
+        subtitle="Pick up to 3 prompts. There's no character limit: real detail beats a clever one-liner, and it's what people search for."
+      />
+      <Suspense fallback={<Spinner />}>
         <PromptsLoader />
       </Suspense>
     </main>

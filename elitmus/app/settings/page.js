@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import { connection } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import SettingsForms from "./settings-forms";
+import { PageHeader, Spinner } from "@/components/ui";
 
 export default function SettingsPage() {
   return (
-    <main className="mx-auto flex min-h-screen max-w-xl flex-col gap-6 p-4">
-      <h1 className="text-2xl font-semibold">Settings</h1>
-      <Suspense fallback={<p className="text-gray-500">Loading...</p>}>
+    <main className="page-narrow">
+      <PageHeader eyebrow="Settings" title="Your account" />
+      <Suspense fallback={<Spinner />}>
         <SettingsLoader />
       </Suspense>
     </main>

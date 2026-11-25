@@ -2,11 +2,11 @@
 // defaultValue = "" shows a "Choose..." placeholder; pass a value to pre-select it.
 export default function SelectField({ label, name, options, defaultValue = "" }) {
   return (
-    <label className="flex flex-col gap-1 text-sm">
-      {label}
-      <select name={name} required defaultValue={defaultValue} className="rounded border p-2">
+    <label className="flex flex-col gap-2">
+      <span className="label">{label}</span>
+      <select name={name} required defaultValue={defaultValue} className="field">
         <option value="" disabled>
-          Choose...
+          Choose…
         </option>
         {options.map((o) => (
           <option key={o.value} value={o.value}>
