@@ -1,5 +1,5 @@
 import { getAge, INTENTS, isActiveThisWeek } from "@/lib/options";
-import { getTraits, QUESTIONS } from "@/lib/questions";
+import { getTraits, sampleAnswers, QUIZ_LENGTH } from "@/lib/questions";
 import { promptText } from "@/lib/prompts";
 import { photoUrl } from "@/lib/photos";
 import LikeButton from "./like-button";
@@ -13,12 +13,8 @@ export default function ProfileView({ profile, likeTo = null }) {
   const photos = profile.photos ?? [];
   const prompts = profile.prompt_answers ?? [];
 
-  const scenarios = QUESTIONS.slice(0, 2)
-    .map((q) => ({
-      question: q.text,
-      answer: q.options.find((o) => o.id === profile.personality?.[q.id])?.text,
-    }))
-    .filter((s) => s.answer);
+  // Two of their real quiz answers, from different traits
+  const scenarios = sampleAnswers(profile.personality, 2);
 
   // Wrap any block so it gets a Like button (only when likeTo is set)
   function likeable(key, target, content) {
@@ -39,7 +35,7 @@ export default function ProfileView({ profile, likeTo = null }) {
     blocks.push(likeable("traits", "Traits",
       <section className="card p-6 sm:p-7">
         <p className="eyebrow">Personality</p>
-        <p className="mt-1 text-sm text-ink-soft">From 10 real-life scenarios, not a self-description</p>
+        <p className="mt-1 text-sm text-ink-soft">From {QUIZ_LENGTH} real-life scenarios, not a self-description</p>
         <div className="mt-4 flex flex-wrap gap-2">
           {traits.map((t) => (
             <span key={t} className="chip bg-accent-soft py-1.5 text-[15px] text-accent-dark">

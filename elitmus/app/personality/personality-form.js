@@ -2,24 +2,26 @@
 
 import { useActionState, useState } from "react";
 import { savePersonality } from "./actions";
-import { QUESTIONS } from "@/lib/questions";
 
-export default function PersonalityForm({ saved }) {
+// `questions` come from the server already picked and shuffled, without scores
+export default function PersonalityForm({ questions }) {
   const [state, formAction, pending] = useActionState(savePersonality, null);
-  // How many questions are answered, for the progress bar. Starts from saved answers.
-  const [answered, setAnswered] = useState(QUESTIONS.filter((q) => saved[q.id]).length);
+  const [answered, setAnswered] = useState(0);
 
   // Any radio change bubbles up to the form: recount from the form's current values
   function handleChange(e) {
     const data = new FormData(e.currentTarget);
-    setAnswered(QUESTIONS.filter((q) => data.get(q.id)).length);
+    setAnswered(questions.filter((q) => data.get(q.id)).length);
   }
 
-  const total = QUESTIONS.length;
+  const total = questions.length;
 
   return (
     <form action={formAction} onChange={handleChange} className="flex flex-col gap-4">
-      {QUESTIONS.map((q, i) => (
+      {/* Tells the server which questions this quiz had */}
+      <input type="hidden" name="quiz" value={questions.map((q) => q.id).join(",")} />
+
+      {questions.map((q, i) => (
         <fieldset key={q.id} className="card animate-rise p-5 sm:p-6">
           <legend className="sr-only">{q.text}</legend>
           <p className="eyebrow">
@@ -34,14 +36,7 @@ export default function PersonalityForm({ saved }) {
                 key={o.id}
                 className="group flex cursor-pointer items-center gap-3 rounded-2xl border border-line px-4 py-3.5 text-[15px] transition hover:border-ink/25 has-[:checked]:border-accent has-[:checked]:bg-accent-soft has-[:focus-visible]:ring-4 has-[:focus-visible]:ring-accent/15"
               >
-                <input
-                  type="radio"
-                  name={q.id}
-                  value={o.id}
-                  defaultChecked={saved[q.id] === o.id}
-                  required
-                  className="sr-only"
-                />
+                <input type="radio" name={q.id} value={o.id} required className="sr-only" />
                 {/* Custom radio circle: the dot appears when the hidden input is checked */}
                 <span className="grid size-5 shrink-0 place-items-center rounded-full border-2 border-line bg-surface transition group-has-[:checked]:border-accent">
                   <span className="size-2.5 scale-0 rounded-full bg-accent transition group-has-[:checked]:scale-100" />
@@ -68,7 +63,10 @@ export default function PersonalityForm({ saved }) {
               <span className="text-ink-soft"> of {total} answered</span>
             </p>
             <div className="h-1.5 overflow-hidden rounded-full bg-sand">
-              <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${(answered / total) * 100}%` }} />
+              <div
+                className="h-full rounded-full bg-accent transition-all duration-500"
+                style={{ width: `${(answered / total) * 100}%` }}
+              />
             </div>
           </div>
           <button disabled={pending} className="btn btn-primary py-3">

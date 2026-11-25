@@ -56,3 +56,38 @@ revoke execute on function public.delete_my_account() from public, anon;
 grant execute on function public.delete_my_account() to authenticated;
 revoke execute on function public.touch_last_active() from public, anon;
 grant execute on function public.touch_last_active() to authenticated;
+
+
+-- ============================================================================
+-- Personality quiz: retake limit (once every 7 days)
+-- The app hides the quiz during the lock, but this trigger is the real rule:
+-- even a hand-crafted API request can't overwrite answers within 7 days.
+-- ============================================================================
+
+alter table public.profiles add column if not exists personality_taken_at timestamptz;
+
+create or replace function public.guard_personality_retake()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.personality is distinct from old.personality then
+    if old.personality is not null
+       and old.personality_taken_at is not null
+       and old.personality_taken_at > now() - interval '7 days' then
+      raise exception 'You can retake the personality quiz once every 7 days.'
+        using errcode = 'P0001';
+    end if;
+    new.personality_taken_at := now();            -- stamp the new attempt
+  else
+    new.personality_taken_at := old.personality_taken_at;  -- nobody can edit it directly
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists before_personality_update on public.profiles;
+create trigger before_personality_update
+  before update on public.profiles
+  for each row execute function public.guard_personality_retake();
