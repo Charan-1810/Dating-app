@@ -727,3 +727,51 @@ export function sampleAnswers(answers, count = 2) {
   }
   return result;
 }
+
+// ── Premium: "Why you might click" ──────────────────────────────────────
+
+// Answers → { trait: score }, e.g. { openness: 3, stability: -1 }
+export function traitScores(answers) {
+  const scores = {};
+  for (const [questionId, optionId] of Object.entries(answers ?? {})) {
+    const question = QUESTION_BY_ID[questionId];
+    const option = question?.options.find((o) => o.id === optionId);
+    if (option) scores[question.trait] = (scores[question.trait] ?? 0) + option.score;
+  }
+  return scores;
+}
+
+// Compares two people trait by trait, plus any question you both got and answered the same way
+export function compareTraits(mine, theirs) {
+  const a = traitScores(mine);
+  const b = traitScores(theirs);
+  const shared = [];
+  const different = [];
+  for (const trait of TRAITS) {
+    if (!a[trait] || !b[trait]) continue;
+    const myLabel = TRAIT_LABELS[trait][a[trait] > 0 ? "high" : "low"];
+    const theirLabel = TRAIT_LABELS[trait][b[trait] > 0 ? "high" : "low"];
+    if (myLabel === theirLabel) shared.push(myLabel);
+    else different.push({ mine: myLabel, theirs: theirLabel });
+  }
+  const sameAnswers = Object.entries(theirs ?? {})
+    .filter(([questionId, optionId]) => mine?.[questionId] === optionId && QUESTION_BY_ID[questionId])
+    .map(([questionId, optionId]) => {
+      const question = QUESTION_BY_ID[questionId];
+      return { question: question.text, answer: question.options.find((o) => o.id === optionId).text };
+    });
+  return { shared, different, sameAnswers };
+}
+
+// Browse filter options, e.g. { value: "conscientiousness:high", label: "Planner" }
+export const TRAIT_FILTERS = TRAITS.flatMap((trait) => [
+  { value: `${trait}:high`, label: TRAIT_LABELS[trait].high },
+  { value: `${trait}:low`, label: TRAIT_LABELS[trait].low },
+]);
+
+// Does this person's majority answer for `trait` go in `direction` ("high" | "low")?
+export function hasTrait(answers, filterValue) {
+  const [trait, direction] = filterValue.split(":");
+  const score = traitScores(answers)[trait] ?? 0;
+  return direction === "high" ? score > 0 : score < 0;
+}

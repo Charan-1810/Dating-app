@@ -20,6 +20,7 @@ import {
 const CITY_OPTIONS = CITIES.map((c) => ({ value: c, label: c }));
 
 const PROFILE_LINKS = [
+  { href: "/premium", label: "Premium", Icon: SparklesIcon },
   { href: "/photos", label: "Photos", Icon: CameraIcon },
   { href: "/personality", label: "Personality questions", Icon: SparklesIcon },
   { href: "/prompts", label: "Prompts", Icon: PencilIcon },

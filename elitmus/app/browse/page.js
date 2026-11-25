@@ -5,7 +5,9 @@ import { CITIES, INTENTS, PAUSE_AFTER_DAYS, dateYearsAgo, daysAgo } from "@/lib/
 import Link from "next/link";
 import ProfileCard from "@/components/profile-card";
 import { CardGridSkeleton, EmptyState, PageHeader } from "@/components/ui";
-import { SearchIcon } from "@/components/icons";
+import { SearchIcon, SparklesIcon } from "@/components/icons";
+import { getPremium } from "@/lib/premium";
+import { hasTrait, TRAIT_FILTERS } from "@/lib/questions";
 
 const GENDER_FOR = { women: "woman", men: "man" };
 const GROUP_FOR = { woman: "women", man: "men" };
@@ -33,12 +35,11 @@ async function BrowseResults({ searchParams }) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // My own profile: needed for two-way gender matching
-  const { data: me } = await supabase
-    .from("profiles")
-    .select("gender, interested_in")
-    .eq("id", user.id)
-    .single();
+  // My own profile (for two-way gender matching) and whether I'm premium
+  const [{ data: me }, premium] = await Promise.all([
+    supabase.from("profiles").select("gender, interested_in").eq("id", user.id).single(),
+    getPremium(supabase, user.id),
+  ]);
 
   // Read and clean the filters from the URL
   const minAge = clampAge(params.min_age);
@@ -46,6 +47,8 @@ async function BrowseResults({ searchParams }) {
   const city = CITIES.includes(params.city) ? params.city : "";
   const intent = INTENTS.some((i) => i.value === params.intent) ? params.intent : "";
   const q = (params.q ?? "").trim().slice(0, 50);
+  // Premium-only filter, checked here on the server: a free user editing the URL gets nothing
+  const trait = premium.active && TRAIT_FILTERS.some((t) => t.value === params.trait) ? params.trait : "";
 
   let query = supabase
     .from("profiles")
@@ -75,22 +78,45 @@ async function BrowseResults({ searchParams }) {
   if (maxAge) query = query.gt("birthdate", dateYearsAgo(maxAge + 1));
   if (q) query = query.ilike("prompt_answers.answer", `%${q}%`);
 
-  const { data: profiles, error } = await query;
+  const { data: rows, error } = await query;
   if (error) throw new Error(error.message);
 
-  const hasFilters = Boolean(q || city || intent || minAge || maxAge);
+  // Traits are computed from quiz answers in code, so this filter runs after the query
+  const profiles = trait ? rows.filter((p) => hasTrait(p.personality, trait)) : rows;
+
+  const hasFilters = Boolean(q || city || intent || minAge || maxAge || trait);
 
   return (
     <div className="flex flex-col gap-5">
       <form className="card flex flex-col gap-3 p-3 sm:p-4">
-        <div className="relative">
-          <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />
-          <input
-            name="q"
-            defaultValue={q}
-            placeholder="Search answers: trekking, biryani, startups…"
-            className="field pl-12"
-          />
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <SearchIcon className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted" />
+            <input
+              name="q"
+              defaultValue={q}
+              placeholder="Search answers: trekking, biryani, startups…"
+              className="field pl-12"
+            />
+          </div>
+          {premium.active ? (
+            <select name="trait" defaultValue={trait} aria-label="Personality" className="field sm:w-60">
+              <option value="">Any personality</option>
+              {TRAIT_FILTERS.map((t) => (
+                <option key={t.value} value={t.value}>{t.label}</option>
+              ))}
+            </select>
+          ) : (
+            <Link
+              href="/premium"
+              className="flex items-center justify-between gap-2 rounded-2xl border border-dashed border-line px-4 py-3 text-[15px] text-ink-soft transition hover:border-accent/50 hover:text-ink sm:w-60"
+            >
+              <span className="flex items-center gap-2">
+                <SparklesIcon className="size-4 text-accent" /> Filter by personality
+              </span>
+              <span className="chip bg-ink px-2 py-0.5 text-[11px] text-paper">Premium</span>
+            </Link>
+          )}
         </div>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-[0.8fr_0.8fr_1.2fr_1.5fr_auto]">
           <input name="min_age" type="number" min={18} max={99} defaultValue={minAge ?? ""} placeholder="Min age" className="field" />

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logout } from "@/app/login/actions";
 import { useLiveNotifications, NotificationToast } from "./like-notifications";
-import { CompassIcon, HeartIcon, LogOutIcon, SlidersIcon, UserIcon } from "./icons";
+import { CompassIcon, HeartIcon, LogOutIcon, SlidersIcon, SparklesIcon, UserIcon } from "./icons";
 import { Wordmark } from "./ui";
 
 const LINKS = [
@@ -55,7 +55,18 @@ export default function NavBar() {
                   </Link>
                 ))}
               </nav>
-              <form action={logout} className="ml-auto">
+              <Link
+                href="/premium"
+                className={`ml-auto flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition ${
+                  pathname.startsWith("/premium")
+                    ? "bg-accent text-white"
+                    : "bg-accent-soft text-accent-dark hover:bg-accent hover:text-white"
+                }`}
+              >
+                <SparklesIcon className="size-4" />
+                Premium
+              </Link>
+              <form action={logout}>
                 <button className="btn btn-ghost px-3" title="Log out">
                   <LogOutIcon className="size-4" />
                   <span className="hidden sm:inline">Log out</span>

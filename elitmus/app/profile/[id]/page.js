@@ -7,6 +7,8 @@ import ProfileView from "@/components/profile-view";
 import { LikeBackButton } from "@/components/like-button";
 import SafetyMenu from "@/components/safety-menu";
 import { describeTarget } from "@/lib/prompts";
+import { getPremium } from "@/lib/premium";
+import WhyWeMatched from "@/components/why-we-matched";
 import { Spinner } from "@/components/ui";
 import { ChevronLeftIcon, HeartIcon, MessageIcon, SparklesIcon } from "@/components/icons";
 
@@ -37,7 +39,9 @@ async function OtherProfile({ params }) {
     { data: myLike },
     { data: theirLike },
     { data: sentToday },
-    { data: match },  
+    { data: match },
+    { data: me },
+    premium,
   ] = await Promise.all([
     supabase
       .from("profiles")
@@ -49,11 +53,13 @@ async function OtherProfile({ params }) {
     supabase.from("likes").select("id").eq("from_user", user.id).eq("to_user", id).maybeSingle(),
     supabase.from("likes").select("target, comment").eq("from_user", id).eq("to_user", user.id).maybeSingle(),
     supabase.rpc("likes_sent_today"),
-    supabase                  // NEW
+    supabase
       .from("matches")
       .select("id")
       .or(`user_a.eq.${id},user_b.eq.${id}`)
       .maybeSingle(),
+    supabase.from("profiles").select("personality").eq("id", user.id).maybeSingle(),
+    getPremium(supabase, user.id),
   ]);
 
   if (error) throw new Error(error.message);
@@ -100,6 +106,9 @@ async function OtherProfile({ params }) {
         </div>
       )}
       {!isMe && !myLike && !theirLike && <LikesLeft left={likesLeft} />}
+      {!isMe && (
+        <WhyWeMatched name={profile.name} mine={me?.personality} theirs={profile.personality} premium={premium.active} />
+      )}
       <ProfileView profile={profile} likeTo={canLike ? id : null} />
       {!isMe && <SafetyMenu userId={id} name={profile.name} />}
     </>

@@ -70,7 +70,24 @@ export default function LegalPage() {
           </p>
         </Section>
 
-        <Section n="6" title="Grievance Officer (IT Rules 2021)">
+        <Section n="6" title="Premium and payments">
+          <ul className="list-disc space-y-1 pl-5 marker:text-accent">
+            <li>
+              Premium costs ₹199/month including GST, renews monthly, and can be cancelled any time in Premium settings.
+            </li>
+            <li>
+              Safety, verification, messaging and seeing who liked you are <strong className="text-ink">never</strong>{" "}
+              paid features.
+            </li>
+            <li>
+              In this prototype payments are simulated; no money is charged. A launch would use an RBI-compliant
+              gateway with your explicit consent for auto-renewal, and a published refund policy.
+            </li>
+            <li>Whether you pay is private: other users can&apos;t see it.</li>
+          </ul>
+        </Section>
+
+        <Section n="7" title="Grievance Officer (IT Rules 2021)">
           <p>Complaints are acknowledged within 24 hours and resolved within 15 days.</p>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 rounded-2xl bg-paper p-4 text-sm">
             <dt className="text-muted">Officer</dt>
