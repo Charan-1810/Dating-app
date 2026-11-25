@@ -8,6 +8,7 @@ import { describeTarget } from "@/lib/prompts";
 import { Avatar, Spinner } from "@/components/ui";
 import { ChevronLeftIcon, HeartIcon, ShieldIcon } from "@/components/icons";
 import ChatRoom from "./chat-room";
+import ChatThemePicker from "@/components/chat-theme-picker";
 
 export default function ChatPage({ params }) {
   return (
@@ -62,7 +63,7 @@ async function ChatLoader({ params }) {
 
   return (
     <>
-      <header className="flex items-center gap-2 border-b border-line px-2 py-2.5 sm:px-4">
+      <header className="relative z-10 flex items-center gap-2 border-b border-line bg-paper px-2 py-2.5 sm:px-4">
         <Link href="/likes" aria-label="Back to likes" className="btn btn-ghost size-10 p-0">
           <ChevronLeftIcon className="size-5" />
         </Link>
@@ -73,14 +74,17 @@ async function ChatLoader({ params }) {
             <span className="text-xs text-muted">View profile</span>
           </span>
         </Link>
-        <Link href={`/profile/${other.id}#safety`} className="btn btn-ghost ml-auto px-3 text-muted" title="Report or block">
-          <ShieldIcon className="size-4" />
-          <span className="hidden sm:inline">Safety</span>
-        </Link>
+        <div className="ml-auto flex items-center">
+          <ChatThemePicker matchId={matchId} />
+          <Link href={`/profile/${other.id}#safety`} className="btn btn-ghost px-3 text-muted" title="Report or block">
+            <ShieldIcon className="size-4" />
+            <span className="hidden sm:inline">Safety</span>
+          </Link>
+        </div>
       </header>
 
       <ChatRoom matchId={matchId} userId={user.id} initialMessages={messages ?? []} otherName={other.name}>
-        <p className="eyebrow text-center">How it started</p>
+        <p className="eyebrow text-center text-(--chat-muted)">How it started</p>
         {openers.map((like) => (
           <div key={like.from_user} className="card mx-auto flex w-full max-w-sm flex-col items-center gap-2 p-4 text-center">
             <span className="flex items-center gap-1.5 text-xs text-ink-soft">

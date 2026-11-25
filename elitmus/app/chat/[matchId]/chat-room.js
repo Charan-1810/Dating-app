@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SendIcon } from "@/components/icons";
+import { useChatTheme } from "@/lib/chat-themes";
 
 // Add a message unless it's already in the list (it can arrive twice: from our insert AND from Realtime)
 function appendUnique(list, msg) {
@@ -29,6 +30,7 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
   const [text, setText] = useState("");
   const [error, setError] = useState(null);
   const bottomRef = useRef(null);
+  const theme = useChatTheme(matchId);
 
   // Live: receive new messages in this match
   useEffect(() => {
@@ -74,12 +76,16 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
   }
 
   return (
-    <>
+    // The theme colours go in as CSS variables / inline styles, so switching is instant
+    <div
+      className="flex min-h-0 flex-1 flex-col transition-[background] duration-300"
+      style={{ background: theme.bg, "--chat-muted": theme.muted }}
+    >
       <div className="flex flex-1 flex-col gap-1.5 overflow-y-auto px-4 py-6">
         <div className="mb-6 flex flex-col gap-3">{children}</div>
 
         {messages.length === 0 && (
-          <p className="py-4 text-center text-sm text-muted">
+          <p className="py-4 text-center text-sm" style={{ color: theme.muted }}>
             Say hello to {otherName}. Pick up from what they liked, it&apos;s the easiest opener there is.
           </p>
         )}
@@ -91,14 +97,17 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
           return (
             <div
               key={m.id}
-              className={`max-w-[78%] animate-rise rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed ${firstOfGroup ? "mt-2" : ""} ${
-                mine
-                  ? "self-end rounded-br-lg bg-accent text-white"
-                  : "self-start rounded-bl-lg border border-line bg-surface"
+              className={`max-w-[78%] animate-rise rounded-3xl px-4 py-2.5 text-[15px] leading-relaxed shadow-sm ${firstOfGroup ? "mt-2" : ""} ${
+                mine ? "self-end rounded-br-lg" : "self-start rounded-bl-lg border"
               }`}
+              style={
+                mine
+                  ? { background: theme.mine, color: theme.mineText }
+                  : { background: theme.theirs, color: theme.theirsText, borderColor: theme.theirsBorder }
+              }
             >
               <p className="whitespace-pre-line">{m.body}</p>
-              <p className={`mt-0.5 text-right text-[10px] ${mine ? "text-white/70" : "text-muted"}`}>
+              <p className="mt-0.5 text-right text-[10px] opacity-60">
                 {formatTime(m.created_at)}
               </p>
             </div>
@@ -108,9 +117,13 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
         <div ref={bottomRef} />
       </div>
 
-      {error && <p className="px-4 pb-2 text-sm text-red-600">{error}</p>}
+      {error && <p className="px-4 pb-2 text-sm text-red-500">{error}</p>}
 
-      <form onSubmit={send} className="flex items-center gap-2 border-t border-line bg-paper/90 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-4">
+      <form
+        onSubmit={send}
+        className="flex items-center gap-2 border-t border-black/5 px-3 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-4"
+        style={{ background: theme.bar }}
+      >
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -121,11 +134,12 @@ export default function ChatRoom({ matchId, userId, initialMessages, otherName, 
         <button
           aria-label="Send"
           disabled={!text.trim()}
-          className="grid size-12 shrink-0 place-items-center rounded-full bg-accent text-white transition hover:bg-accent-dark active:scale-95 disabled:opacity-40"
+          className="grid size-12 shrink-0 place-items-center rounded-full text-white transition hover:brightness-95 active:scale-95 disabled:opacity-40"
+          style={{ background: theme.mine }}
         >
           <SendIcon className="size-5" />
         </button>
       </form>
-    </>
+    </div>
   );
 }
